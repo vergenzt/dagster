@@ -1,3 +1,4 @@
+import urllib.parse
 from collections import defaultdict
 from enum import Enum
 from typing import Any, Dict, List, Mapping, Optional, Type
@@ -77,7 +78,13 @@ class SigmaOrganization(ConfigurableResource):
 
         return self._api_token
 
-    def fetch_json(self, endpoint: str, method: str = "GET") -> Dict[str, Any]:
+    def fetch_json(
+        self, endpoint: str, method: str = "GET", query_params: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
+        url = f"{self.base_url}/v2/{endpoint}"
+        if query_params:
+            url = f"{url}?{urllib.parse.urlencode(query_params)}"
+
         response = requests.request(
             method=method,
             url=f"{self.base_url}/v2/{endpoint}",
@@ -119,10 +126,24 @@ class SigmaOrganization(ConfigurableResource):
         return self.fetch_json(f"workbooks/{workbook_id}/queries")["entries"]
 
     @cached_method
+    def fetch_members(self, workbook_id: str) -> List[Dict[str, Any]]:
+        return self.fetch_json("members", query_params={"limit": 500})["entries"]
+
+    @cached_method
+    def build_member_id_to_email_mapping(self) -> Mapping[str, str]:
+        """Retrieves all members in the Sigma organization and builds a mapping
+        from member ID to email address.
+        """
+        members = self.fetch_json("members")["entries"]
+        return {member["memberId"]: member["email"] for member in members}
+
+    @cached_method
     def build_organization_data(self) -> SigmaOrganizationData:
         """Retrieves all workbooks and datasets in the Sigma organization and builds a
         SigmaOrganizationData object representing the organization's assets.
         """
+        member_id_to_email = self.build_member_id_to_email_mapping()
+
         raw_workbooks = self.fetch_workbooks()
 
         dataset_inode_to_name: Mapping[str, str] = {}
@@ -181,7 +202,13 @@ class SigmaOrganization(ConfigurableResource):
                     dataset_element_to_inode[element_id]
                 ].union(table_deps)
 
-            workbooks.append(SigmaWorkbook(properties=workbook, datasets=workbook_deps))
+            workbooks.append(
+                SigmaWorkbook(
+                    properties=workbook,
+                    datasets=workbook_deps,
+                    owner_email=member_id_to_email.get(workbook["ownerId"]),
+                )
+            )
 
         datasets: List[SigmaDataset] = []
         for dataset in self.fetch_datasets():
