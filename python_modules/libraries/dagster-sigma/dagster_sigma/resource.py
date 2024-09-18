@@ -126,7 +126,7 @@ class SigmaOrganization(ConfigurableResource):
         return self.fetch_json(f"workbooks/{workbook_id}/queries")["entries"]
 
     @cached_method
-    def fetch_members(self, workbook_id: str) -> List[Dict[str, Any]]:
+    def fetch_members(self) -> List[Dict[str, Any]]:
         return self.fetch_json("members", query_params={"limit": 500})["entries"]
 
     @cached_method
@@ -134,7 +134,7 @@ class SigmaOrganization(ConfigurableResource):
         """Retrieves all members in the Sigma organization and builds a mapping
         from member ID to email address.
         """
-        members = self.fetch_json("members")["entries"]
+        members = self.fetch_members()
         return {member["memberId"]: member["email"] for member in members}
 
     @cached_method
