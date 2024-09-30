@@ -1,6 +1,5 @@
 import * as dagre from 'dagre';
 
-import {getAssetNodeDimensions} from '../../asset-graph/layout';
 import {GroupNode, ModelEdge, ModelGraph, ModelNode} from '../common/ModelGraph';
 import {LAYOUT_MARGIN_X} from '../common/conts';
 import {Point, Rect} from '../common/types';
@@ -155,7 +154,7 @@ export class GraphLayout {
     // Make sure the subgraph width is at least the width of the root node.
     let subgraphFullWidth = maxX - minX + LAYOUT_MARGIN_X * 2;
     if (rootNode) {
-      const parentNodeWidth = getNodeWidth(rootNode, this.modelGraph);
+      const parentNodeWidth = 500;
       if (subgraphFullWidth < parentNodeWidth) {
         const extraOffsetX = (parentNodeWidth - subgraphFullWidth) / 2;
         for (const node of nodes) {
@@ -208,11 +207,10 @@ export function getLayoutGraph(
     if (isAssetNode(node) && node.hideInLayout) {
       continue;
     }
-    const dimensions = getAssetNodeDimensions(node.definition);
     const dagreNode: DagreNode = {
       id: node.id,
-      width: node.width || getNodeWidth(node, modelGraph),
-      height: getNodeHeight(node, modelGraph),
+      width: node.width || 500,
+      height: 200,
     };
     layoutGraph.nodes[node.id] = dagreNode;
   }
