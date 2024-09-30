@@ -1,6 +1,6 @@
 import * as dagre from 'dagre';
 
-import {GraphLayout, getNodeHeight, getNodeWidth} from './GraphLayout';
+import {GraphLayout} from './GraphLayout';
 import {GroupNode, ModelGraph} from '../common/ModelGraph';
 import {LAYOUT_MARGIN_X} from '../common/conts';
 import {Rect} from '../common/types';
@@ -163,8 +163,8 @@ export class GraphExpander {
     delete this.modelGraph.edgesByGroupNodeIds[groupNodeId];
 
     // Shrink size for the current group node.
-    groupNode.width = getNodeWidth(groupNode, this.modelGraph);
-    groupNode.height = getNodeHeight(groupNode, this.modelGraph, this.testMode);
+    groupNode.width = 600;
+    groupNode.height = 200;
 
     // From the given group node's parent, layout, update size, and continue to
     // do the same for all its ancestors until reaching the root.

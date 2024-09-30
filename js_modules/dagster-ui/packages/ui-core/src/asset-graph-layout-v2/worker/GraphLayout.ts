@@ -154,7 +154,7 @@ export class GraphLayout {
     // Make sure the subgraph width is at least the width of the root node.
     let subgraphFullWidth = maxX - minX + LAYOUT_MARGIN_X * 2;
     if (rootNode) {
-      const parentNodeWidth = 500;
+      const parentNodeWidth = 600;
       if (subgraphFullWidth < parentNodeWidth) {
         const extraOffsetX = (parentNodeWidth - subgraphFullWidth) / 2;
         for (const node of nodes) {
