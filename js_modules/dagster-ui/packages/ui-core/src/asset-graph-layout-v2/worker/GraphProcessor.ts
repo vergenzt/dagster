@@ -45,6 +45,7 @@ export class GraphProcessor {
       const assetNode: AssetNode = {
         nodeType: NodeType.ASSET_NODE,
         id: graphNode.id,
+        parentId: group,
         level: 1,
         namespace: `${group}/${graphNode.id}`,
       };
@@ -123,12 +124,9 @@ export class GraphProcessor {
    */
   processNamespaceRelationships(modelGraph: ModelGraph) {
     for (const node of modelGraph.nodes) {
-      debugger;
       if (isAssetNode(node) && node.hideInLayout) {
         continue;
       }
-
-      const ns = node.namespace;
 
       // Root node.
       if (node.level === 0) {
@@ -137,15 +135,8 @@ export class GraphProcessor {
       }
 
       // Set namespace parent.
-      const parentNodeId = this.getGroupNodeIdFromNamespace(ns);
-      console.log({parentNodeId, node});
-      debugger;
+      const parentNodeId = node.parentId!;
       const parentGroupNode = modelGraph.nodesById[parentNodeId] as GroupNode;
-      if (parentGroupNode) {
-        node.parentId = parentGroupNode.id;
-      } else {
-        console.warn(`Failed to find the NS parent of node "${node.id}": "${parentNodeId}"`);
-      }
 
       // Set namespace children.
       if (parentGroupNode) {
@@ -207,14 +198,14 @@ export class GraphProcessor {
         const connectionFromNodeId =
           sourceNodeNextLevelNsPart === ''
             ? curNode.id
-            : `${commonNs}${commonNs === '' ? '' : '/'}${sourceNodeNextLevelNsPart}___group___`;
+            : `${commonNs}${commonNs === '' ? '' : '/'}${sourceNodeNextLevelNsPart}`;
         const targetNodeNextLevelNsPart = getNextLevelNsPart(commonNs, targetNode.namespace);
         const connectionToNodeId =
           targetNodeNextLevelNsPart === ''
             ? targetNode.id
-            : `${commonNs}${commonNs === '' ? '' : '/'}${targetNodeNextLevelNsPart}___group___`;
+            : `${commonNs}${commonNs === '' ? '' : '/'}${targetNodeNextLevelNsPart}`;
 
-        const commonNsGroupId = commonNs === '' ? '' : `${commonNs}___group___`;
+        const commonNsGroupId = commonNs === '' ? '' : `${commonNs}`;
         if (modelGraph.layoutGraphEdges[commonNsGroupId] == null) {
           modelGraph.layoutGraphEdges[commonNsGroupId] = {};
         }
@@ -293,7 +284,7 @@ export class GraphProcessor {
           const newGroupNodeNamespace =
             curGroupNode == null ? '' : `${curGroupNode.namespace}/${curGroupNode.id}`;
           const baseId = `section_${groupIndex + 1}_of_${groups.length}`;
-          const newGroupNodeId = `${baseId}___group___`;
+          const newGroupNodeId = `${baseId}`;
           const newGroupNode: GroupNode = {
             nodeType: NodeType.GROUP_NODE,
             id: newGroupNodeId,
@@ -324,7 +315,7 @@ export class GraphProcessor {
 
           // Update the namespace of all nodes and their desendents in the new
           // group.
-          const newNamespacePart = newGroupNodeId.replace('___group___', '');
+          const newNamespacePart = newGroupNodeId;
           const updateNamespace = (node: ModelNode) => {
             const oldNamespace = node.namespace;
             if (oldNamespace === '') {
@@ -333,7 +324,7 @@ export class GraphProcessor {
               if (curGroupNode == null) {
                 node.namespace = `${newNamespacePart}/${node.namespace}`;
               } else {
-                node.namespace = (node.parentId || '').replace('___group___', '');
+                node.namespace = node.parentId || '';
               }
             }
             node.level = node.namespace.split('/').filter((c) => c !== '').length;
@@ -341,7 +332,7 @@ export class GraphProcessor {
               // Update group node id since its namespace has been changed.
               const oldNodeId = node.id;
               delete modelGraph.nodesById[node.id];
-              node.id = `${node.namespace}/${node.id}___group___`;
+              node.id = `${node.namespace}/${node.id}`;
               modelGraph.nodesById[node.id] = node;
 
               // Update its parent's children to use the new id.
@@ -453,9 +444,5 @@ export class GraphProcessor {
         this.gatherDescendants(modelGraph, child, descendants);
       }
     }
-  }
-
-  private getGroupNodeIdFromNamespace(ns: string): string {
-    return `${ns}___group___`;
   }
 }
