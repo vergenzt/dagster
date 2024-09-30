@@ -1,6 +1,6 @@
 import * as dagre from 'dagre';
 
-import {GraphLayout, getNodeHeight, getNodeWidth} from './GraphLayout';
+import {GraphLayout} from './GraphLayout';
 import {GroupNode, ModelGraph} from '../common/ModelGraph';
 import {LAYOUT_MARGIN_X} from '../common/conts';
 import {Rect} from '../common/types';

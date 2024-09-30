@@ -23,7 +23,7 @@ self.addEventListener('message', (event) => {
         workerEvent.graph,
         workerEvent.targetDeepestGroupNodeIdsToExpand,
       );
-      cacheModelGraph(modelGraph);
+      cacheModelGraph(modelGraph, workerEvent.graphId);
       const resp: ProcessGraphResponse = {
         requestId: workerEvent.requestId,
         eventType: WorkerEventType.PROCESS_GRAPH_RESP,
@@ -35,9 +35,9 @@ self.addEventListener('message', (event) => {
       break;
     }
     case WorkerEventType.UPDATE_EXPANDED_GROUPS_REQ: {
-      const modelGraph = getCachedModelGraph(workerEvent.modelGraphId);
+      const modelGraph = getCachedModelGraph(workerEvent.graphId);
       handleUpdateExpandedGroups(modelGraph, workerEvent.targetDeepestGroupNodeIdsToExpand);
-      cacheModelGraph(modelGraph);
+      cacheModelGraph(modelGraph, workerEvent.graphId);
       const resp: UpdateExpandedGroupsResponse = {
         requestId: workerEvent.requestId,
         eventType: WorkerEventType.UPDATE_EXPANDED_GROUPS_RESP,
@@ -50,7 +50,6 @@ self.addEventListener('message', (event) => {
     default:
       break;
   }
-  console.log('done');
 });
 
 function handleProcessGraph(
@@ -94,14 +93,14 @@ function handleUpdateExpandedGroups(
   expander.reLayoutGraph(targetDeepestGroupNodeIdsToExpand, true);
 }
 
-function cacheModelGraph(modelGraph: ModelGraph) {
-  MODEL_GRAPHS_CACHE[modelGraph.id] = modelGraph;
+function cacheModelGraph(modelGraph: ModelGraph, id: string) {
+  MODEL_GRAPHS_CACHE[id] = modelGraph;
 }
 
-function getCachedModelGraph(modelGraphId: string): ModelGraph {
-  const cachedModelGraph = MODEL_GRAPHS_CACHE[modelGraphId];
+function getCachedModelGraph(graphId: string): ModelGraph {
+  const cachedModelGraph = MODEL_GRAPHS_CACHE[graphId];
   if (cachedModelGraph == null) {
-    throw new Error(`ModelGraph with id "${modelGraphId}" not found"`);
+    throw new Error(`ModelGraph with id "${graphId}" not found"`);
   }
   return cachedModelGraph;
 }

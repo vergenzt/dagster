@@ -64,7 +64,7 @@ class AssetGraphLayoutWorker {
     const updateExpandedGroupsRequest: UpdateExpandedGroupsRequest = {
       requestId: this.requestId++,
       eventType: WorkerEventType.UPDATE_EXPANDED_GROUPS_REQ,
-      modelGraphId: graphId,
+      graphId,
       targetDeepestGroupNodeIdsToExpand: expandedGroups,
     };
     return await this.sendRequest(updateExpandedGroupsRequest);
@@ -101,6 +101,7 @@ export function useAssetGraphLayout(
   const [loading, setLoading] = useState(true);
 
   useLayoutEffect(() => {
+    console.log('in layout');
     async function handleUpdate() {
       const isNewGraph = graphId !== previousGraphId.current;
       console.log({isNewGraph, graphId});
@@ -199,17 +200,19 @@ function convertToAssetGraphLayout(
       height,
     };
 
-    if (node.nodeType === NodeType.ASSET_NODE) {
-      nodes[id] = {id, bounds};
-    } else if (node.nodeType === NodeType.GROUP_NODE) {
-      groups[id] = {
-        id,
-        groupName: node.namespace,
-        repositoryName: node.repositoryName,
-        repositoryLocationName: node.repositoryLocationName,
-        bounds,
-        expanded: node.expanded,
-      };
+    if (width !== 0 && height !== 0) {
+      if (node.nodeType === NodeType.ASSET_NODE) {
+        nodes[id] = {id, bounds};
+      } else if (node.nodeType === NodeType.GROUP_NODE) {
+        groups[id] = {
+          id,
+          groupName: node.namespace,
+          repositoryName: node.repositoryName,
+          repositoryLocationName: node.repositoryLocationName,
+          bounds,
+          expanded: node.expanded,
+        };
+      }
     }
 
     maxWidth = Math.max(maxWidth, x + width / 2);
@@ -261,11 +264,13 @@ function convertToAssetGraphLayout(
     }
   }
 
+  console.log({nodes});
+
   // Return AssetGraphLayout
   return {
     width: maxWidth,
     height: maxHeight,
-    edges,
+    edges: [],
     nodes,
     groups,
   };

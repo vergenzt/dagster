@@ -1,5 +1,6 @@
 import * as dagre from 'dagre';
 
+import {getAssetNodeDimensions} from '../../asset-graph/layout';
 import {GroupNode, ModelEdge, ModelGraph, ModelNode} from '../common/ModelGraph';
 import {LAYOUT_MARGIN_X} from '../common/conts';
 import {Point, Rect} from '../common/types';
@@ -105,9 +106,9 @@ export class GraphLayout {
     const edges: ModelEdge[] = [];
     for (const dagreEdge of dagreEdgeRefs) {
       const points = this.dagreGraph.edge(dagreEdge).points as Point[];
-      // tslint:disable-next-line:no-any Allow arbitrary types.
+
+      // TODO: Consider adding d3 and threejs as dependency for better curved edges.
       const d3 = (globalThis as any)['d3'];
-      // tslint:disable-next-line:no-any Allow arbitrary types.
       const three = (globalThis as any)['THREE'];
       const curvePoints =
         typeof three === 'undefined'
@@ -190,16 +191,6 @@ export class GraphLayout {
   }
 }
 
-/** An utility function to get the node width using an offscreen canvas. */
-export function getNodeWidth(node: ModelNode, modelGraph: ModelGraph) {
-  return 100;
-}
-
-/** An utility function to get the node height. */
-export function getNodeHeight(node: ModelNode, modelGraph: ModelGraph) {
-  return 100;
-}
-
 /** Gets a layout graph for the given nodes. */
 export function getLayoutGraph(
   rootGroupNodeId: string,
@@ -217,6 +208,7 @@ export function getLayoutGraph(
     if (isAssetNode(node) && node.hideInLayout) {
       continue;
     }
+    const dimensions = getAssetNodeDimensions(node.definition);
     const dagreNode: DagreNode = {
       id: node.id,
       width: node.width || getNodeWidth(node, modelGraph),

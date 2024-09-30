@@ -25,7 +25,7 @@ export declare interface ProcessGraphResponse extends WorkerEventBase {
 /** The request for expanding/collapsing a group node. */
 export declare interface UpdateExpandedGroupsRequest extends WorkerEventBase {
   eventType: WorkerEventType.UPDATE_EXPANDED_GROUPS_REQ;
-  modelGraphId: string;
+  graphId: string;
   targetDeepestGroupNodeIdsToExpand?: string[];
 }
 
