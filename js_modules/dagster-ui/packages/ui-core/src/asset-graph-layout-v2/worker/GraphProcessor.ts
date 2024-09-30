@@ -3,7 +3,7 @@ import {GraphData, groupIdForNode} from '../../asset-graph/Utils';
 import {AssetNode, GroupNode, ModelGraph, ModelNode, NodeType} from '../common/ModelGraph';
 import {DEFAULT_GROUP_NODE_CHILDREN_COUNT_THRESHOLD} from '../common/conts';
 import {Edge} from '../common/types';
-import {isAssetNode, isGroupNode} from '../common/utils';
+import {findCommonNamespace, getNextLevelNsPart, isAssetNode, isGroupNode} from '../common/utils';
 
 /**
  * A class that processes given `GraphData` into a `ModelGraph`.
@@ -22,6 +22,8 @@ export class GraphProcessor {
     this.processNodes(modelGraph);
 
     this.processEdgeRelationships(modelGraph);
+
+    this.processNamespaceRelationships(modelGraph);
 
     this.generateLayoutGraphConnections(modelGraph);
 
@@ -53,6 +55,9 @@ export class GraphProcessor {
         if (!seenGroups.has(group)) {
           const groupNode: GroupNode = {
             nodeType: NodeType.GROUP_NODE,
+            groupName: graphNode.definition.groupName,
+            repositoryName: graphNode.definition.repository.name,
+            repositoryLocationName: graphNode.definition.repository.location.name,
             id: group,
             level: 0,
             expanded: false,
@@ -113,6 +118,48 @@ export class GraphProcessor {
   }
 
   /**
+   * Sets namespace relationships in model graph based on the hierarchy data
+   * stored in input node's `namespace`.
+   */
+  processNamespaceRelationships(modelGraph: ModelGraph) {
+    for (const node of modelGraph.nodes) {
+      debugger;
+      if (isAssetNode(node) && node.hideInLayout) {
+        continue;
+      }
+
+      const ns = node.namespace;
+
+      // Root node.
+      if (node.level === 0) {
+        modelGraph.rootNodes.push(node);
+        continue;
+      }
+
+      // Set namespace parent.
+      const parentNodeId = this.getGroupNodeIdFromNamespace(ns);
+      console.log({parentNodeId, node});
+      debugger;
+      const parentGroupNode = modelGraph.nodesById[parentNodeId] as GroupNode;
+      if (parentGroupNode) {
+        node.parentId = parentGroupNode.id;
+      } else {
+        console.warn(`Failed to find the NS parent of node "${node.id}": "${parentNodeId}"`);
+      }
+
+      // Set namespace children.
+      if (parentGroupNode) {
+        if (parentGroupNode.childrenIds == null) {
+          parentGroupNode.childrenIds = [];
+        }
+        if (!parentGroupNode.childrenIds.includes(node.id)) {
+          parentGroupNode.childrenIds.push(node.id);
+        }
+      }
+    }
+  }
+
+  /**
    * Generates layout graph connections for the given model graph.
    */
   generateLayoutGraphConnections(modelGraph: ModelGraph) {
@@ -145,7 +192,38 @@ export class GraphProcessor {
       }
       seenNodeIds.add(curNode.id);
 
+      // For each edge going from curNode (A), find the common namespace of
+      // curNode and edge's target node (B), and mark the connection between the
+      // top-level node that contains A and B within the common namespace.
+      //
+      // For example, op node X's namespae is a/b/c, op node Y's namespace
+      // is a/b/d, and X has an edge to Y. X and Y's common namespace is a/b.
+      // So we mark a/b/c and a/b/d to be connected.
       const outgoingEdges = curNode.outgoingEdges || [];
+      for (const edge of outgoingEdges) {
+        const targetNode = modelGraph.nodesById[edge.targetNodeId] as AssetNode;
+        const commonNs = findCommonNamespace(curNode.namespace, targetNode.namespace);
+        const sourceNodeNextLevelNsPart = getNextLevelNsPart(commonNs, curNode.namespace);
+        const connectionFromNodeId =
+          sourceNodeNextLevelNsPart === ''
+            ? curNode.id
+            : `${commonNs}${commonNs === '' ? '' : '/'}${sourceNodeNextLevelNsPart}___group___`;
+        const targetNodeNextLevelNsPart = getNextLevelNsPart(commonNs, targetNode.namespace);
+        const connectionToNodeId =
+          targetNodeNextLevelNsPart === ''
+            ? targetNode.id
+            : `${commonNs}${commonNs === '' ? '' : '/'}${targetNodeNextLevelNsPart}___group___`;
+
+        const commonNsGroupId = commonNs === '' ? '' : `${commonNs}___group___`;
+        if (modelGraph.layoutGraphEdges[commonNsGroupId] == null) {
+          modelGraph.layoutGraphEdges[commonNsGroupId] = {};
+        }
+        if (modelGraph.layoutGraphEdges[commonNsGroupId][connectionFromNodeId] == null) {
+          modelGraph.layoutGraphEdges[commonNsGroupId][connectionFromNodeId] = {};
+        }
+        modelGraph.layoutGraphEdges[commonNsGroupId][connectionFromNodeId][connectionToNodeId] =
+          true;
+      }
       for (const edge of outgoingEdges) {
         const targetNode = modelGraph.nodesById[edge.targetNodeId] as AssetNode;
         queue.push(targetNode);
@@ -220,6 +298,9 @@ export class GraphProcessor {
             nodeType: NodeType.GROUP_NODE,
             id: newGroupNodeId,
             namespace: newGroupNodeNamespace,
+            groupName: curGroupNode?.groupName ?? '',
+            repositoryName: curGroupNode?.repositoryLocationName ?? '',
+            repositoryLocationName: curGroupNode?.repositoryLocationName ?? '',
             level: 0,
             parentId: curGroupNode?.id,
             childrenIds: nodes.map((node) => node.id),
@@ -372,5 +453,9 @@ export class GraphProcessor {
         this.gatherDescendants(modelGraph, child, descendants);
       }
     }
+  }
+
+  private getGroupNodeIdFromNamespace(ns: string): string {
+    return `${ns}___group___`;
   }
 }

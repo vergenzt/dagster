@@ -40,10 +40,7 @@ interface LayoutGraph {
 export class GraphLayout {
   dagreGraph!: dagre.graphlib.Graph;
 
-  constructor(
-    private readonly modelGraph: ModelGraph,
-    private readonly testMode = false,
-  ) {
+  constructor(private readonly modelGraph: ModelGraph) {
     this.dagreGraph = new dagre.graphlib.Graph();
   }
 

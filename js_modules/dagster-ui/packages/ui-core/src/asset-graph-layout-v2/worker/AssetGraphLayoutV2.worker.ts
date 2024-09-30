@@ -1,6 +1,6 @@
 import {GraphExpander} from './GraphExpander';
 import {GraphLayout} from './GraphLayout';
-import {GraphProcessor} from './GraphPreprocessor';
+import {GraphProcessor} from './GraphProcessor';
 import {GraphData} from '../../asset-graph/Utils';
 import {ModelGraph} from '../common/ModelGraph';
 import {
@@ -14,6 +14,7 @@ const MODEL_GRAPHS_CACHE: Record<string, ModelGraph> = {};
 
 self.addEventListener('message', (event) => {
   const workerEvent = event.data as WorkerEvent;
+  console.log({workerEvent});
   switch (workerEvent.eventType) {
     // Handle processing input graph.
     case WorkerEventType.PROCESS_GRAPH_REQ: {
@@ -29,6 +30,7 @@ self.addEventListener('message', (event) => {
         modelGraph,
         graphId: workerEvent.graphId,
       };
+      console.log({resp});
       postMessage(resp);
       break;
     }
@@ -48,6 +50,7 @@ self.addEventListener('message', (event) => {
     default:
       break;
   }
+  console.log('done');
 });
 
 function handleProcessGraph(

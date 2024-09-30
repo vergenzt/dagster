@@ -164,3 +164,35 @@ export function getLabelWidth(
   }
   return labelWidth;
 }
+
+/**
+ * Given two namespace strings, e.g. a/b/c/d and a/b/x, returns the common
+ * prefix, e.g. a/b.
+ */
+export function findCommonNamespace(ns1: string, ns2: string): string {
+  const ns1Parts = ns1.split('/');
+  const ns2Parts = ns2.split('/');
+  let commonPrefix = '';
+  for (let i = Math.min(ns1Parts.length, ns2Parts.length); i > 0; i--) {
+    const ns1Prefix = ns1Parts.slice(0, i).join('/');
+    const ns2Prefix = ns2Parts.slice(0, i).join('/');
+    if (ns1Prefix === ns2Prefix) {
+      commonPrefix = ns2Prefix;
+      break;
+    }
+  }
+  return commonPrefix;
+}
+
+/** Gets the next level namespace part right after baseNs up to fullNs. */
+export function getNextLevelNsPart(baseNs: string, fullNs: string): string {
+  if (baseNs === fullNs) {
+    return '';
+  }
+  const baseNsParts = baseNs.split('/').filter((part) => part !== '');
+  const fullNsParts = fullNs.split('/').filter((part) => part !== '');
+  if (fullNsParts.length === 0) {
+    return '';
+  }
+  return fullNsParts[baseNsParts.length]!;
+}

@@ -1,13 +1,23 @@
-import {useLayoutEffect, useMemo, useRef} from 'react';
+import {useLayoutEffect, useMemo, useRef, useState} from 'react';
 
+import {NodeType} from './common/ModelGraph';
 import {
   ProcessGraphRequest,
+  ProcessGraphResponse,
   UpdateExpandedGroupsRequest,
+  UpdateExpandedGroupsResponse,
   WorkerEvent,
   WorkerEventType,
 } from './common/WorkerEvents';
 import {GraphData} from '../asset-graph/Utils';
-import {LayoutAssetGraphOptions} from '../asset-graph/layout';
+import {
+  AssetGraphLayout,
+  AssetLayout,
+  AssetLayoutEdge,
+  GroupLayout,
+  LayoutAssetGraphOptions,
+} from '../asset-graph/layout';
+import {IPoint} from '../graph/common';
 
 class AssetGraphLayoutWorker {
   private requestId: number = 0;
@@ -22,7 +32,8 @@ class AssetGraphLayoutWorker {
 
   private worker: Worker;
   private constructor() {
-    this.worker = new Worker(new URL('../workers/dagre_layout.worker', import.meta.url));
+    console.log('created worker');
+    this.worker = new Worker(new URL('./worker/AssetGraphLayoutV2.worker', import.meta.url));
     this.worker.addEventListener('message', (event) => {
       const data = event.data as WorkerEvent;
       const cb = this.callbacksByRequestId[data.requestId];
@@ -60,6 +71,7 @@ class AssetGraphLayoutWorker {
   }
 
   private async sendRequest(data: WorkerEvent) {
+    console.log('send request', data);
     let resp: WorkerEvent;
     await new Promise((res) => {
       const requestId = data.requestId;
@@ -67,8 +79,10 @@ class AssetGraphLayoutWorker {
         resp = response;
         res(0);
       };
+      console.log('posting', data);
       this.worker.postMessage(data);
     });
+    console.log('response', resp!);
     return resp!;
   }
 }
@@ -83,19 +97,39 @@ export function useAssetGraphLayout(
   const graphId = useMemo(() => computeGraphId(graphData), [graphData]);
   const previousGraphId = useRef('');
 
+  const [layout, setLayout] = useState<AssetGraphLayout | null>();
+  const [loading, setLoading] = useState(true);
+
   useLayoutEffect(() => {
     async function handleUpdate() {
-      if (graphId !== previousGraphId.current) {
-        worker.processGraph(graphId, graphData, expandedGroups);
-        previousGraphId.current = graphId;
+      const isNewGraph = graphId !== previousGraphId.current;
+      console.log({isNewGraph, graphId});
+      previousGraphId.current = graphId;
+      setLoading(true);
+      let response: ProcessGraphResponse | UpdateExpandedGroupsResponse;
+      if (isNewGraph) {
+        response = (await worker.processGraph(
+          graphId,
+          graphData,
+          expandedGroups,
+        )) as ProcessGraphResponse;
       } else {
-        worker.updateExpandedGroups(graphId, expandedGroups);
+        response = (await worker.updateExpandedGroups(
+          graphId,
+          expandedGroups,
+        )) as UpdateExpandedGroupsResponse;
       }
+      setLayout(convertToAssetGraphLayout(response));
+      setLoading(false);
     }
     handleUpdate();
   }, [graphId, worker, expandedGroups, graphData]);
 
-  previousGraphId.current = graphId;
+  return {
+    loading,
+    async: true,
+    layout,
+  };
 }
 
 function computeGraphId(graphData: GraphData) {
@@ -137,4 +171,102 @@ function simpleHash(str: string) {
     hash |= 0; // Convert to 32bit integer
   }
   return Math.abs(hash).toString(36); // Convert to base36 for a shorter representation
+}
+
+function convertToAssetGraphLayout(
+  response: ProcessGraphResponse | UpdateExpandedGroupsResponse,
+  direction: 'horizontal' | 'vertical' = 'horizontal',
+): AssetGraphLayout {
+  const graph = response.modelGraph;
+  const nodes: {[id: string]: AssetLayout} = {};
+  const groups: {[id: string]: GroupLayout} = {};
+  const edges: AssetLayoutEdge[] = [];
+
+  let maxWidth = 0;
+  let maxHeight = 0;
+
+  // Process nodes
+  for (const node of graph.nodes) {
+    const {id, width = 0, height = 0} = node;
+    const x = node.x ?? node.globalX ?? 0;
+    const y = node.y ?? node.globalY ?? 0;
+
+    // Calculate bounds
+    const bounds = {
+      x: x - width / 2,
+      y: y - height / 2,
+      width,
+      height,
+    };
+
+    if (node.nodeType === NodeType.ASSET_NODE) {
+      nodes[id] = {id, bounds};
+    } else if (node.nodeType === NodeType.GROUP_NODE) {
+      groups[id] = {
+        id,
+        groupName: node.namespace,
+        repositoryName: node.repositoryName,
+        repositoryLocationName: node.repositoryLocationName,
+        bounds,
+        expanded: node.expanded,
+      };
+    }
+
+    maxWidth = Math.max(maxWidth, x + width / 2);
+    maxHeight = Math.max(maxHeight, y + height / 2);
+  }
+
+  // Process edges
+  for (const node of graph.nodes) {
+    if (node.nodeType === NodeType.ASSET_NODE) {
+      const assetNode = node;
+      const fromNode = node;
+      const fromX = fromNode.x ?? fromNode.globalX ?? 0;
+      const fromY = fromNode.y ?? fromNode.globalY ?? 0;
+      const fromWidth = fromNode.width ?? 0;
+      const fromHeight = fromNode.height ?? 0;
+      const fromId = fromNode.id;
+
+      if (assetNode.outgoingEdges) {
+        for (const edge of assetNode.outgoingEdges) {
+          const toNodeId = edge.targetNodeId;
+          const toNode = graph.nodesById[toNodeId];
+          if (toNode) {
+            const toX = toNode.x ?? toNode.globalX ?? 0;
+            const toY = toNode.y ?? toNode.globalY ?? 0;
+            const toWidth = toNode.width ?? 0;
+            const toHeight = toNode.height ?? 0;
+            const toId = toNode.id;
+
+            // Adjust positions based on direction
+            let fromPoint: IPoint;
+            let toPoint: IPoint;
+            if (direction === 'horizontal') {
+              fromPoint = {x: fromX + fromWidth / 2, y: fromY};
+              toPoint = {x: toX - toWidth / 2, y: toY};
+            } else {
+              fromPoint = {x: fromX, y: fromY + fromHeight / 2};
+              toPoint = {x: toX, y: toY - toHeight / 2};
+            }
+
+            edges.push({
+              from: fromPoint,
+              fromId,
+              to: toPoint,
+              toId,
+            });
+          }
+        }
+      }
+    }
+  }
+
+  // Return AssetGraphLayout
+  return {
+    width: maxWidth,
+    height: maxHeight,
+    edges,
+    nodes,
+    groups,
+  };
 }

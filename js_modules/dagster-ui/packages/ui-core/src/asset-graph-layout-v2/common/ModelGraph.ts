@@ -53,8 +53,8 @@ export declare interface ModelGraph {
 
 /** Node tyoes in a model graph. */
 export enum NodeType {
-  ASSET_NODE,
-  GROUP_NODE,
+  ASSET_NODE = 'asset_node',
+  GROUP_NODE = 'group_node',
 }
 
 /** The base interface of a node in model graph. */
@@ -137,6 +137,10 @@ export declare interface AssetNode extends ModelNodeBase {
  */
 export declare interface GroupNode extends ModelNodeBase {
   nodeType: NodeType.GROUP_NODE;
+
+  groupName: string;
+  repositoryName: string;
+  repositoryLocationName: string;
 
   /** Its children nodes under its namespace. */
   childrenIds?: string[];
