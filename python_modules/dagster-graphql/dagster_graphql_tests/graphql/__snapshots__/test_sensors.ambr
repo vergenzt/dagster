@@ -101,6 +101,26 @@
     dict({
       'description': None,
       'minIntervalSeconds': 30,
+      'name': 'default_automation_condition_sensor',
+      'sensorState': dict({
+        'runs': list([
+        ]),
+        'runsCount': 0,
+        'status': 'STOPPED',
+        'ticks': list([
+        ]),
+      }),
+      'targets': list([
+        dict({
+          'mode': 'default',
+          'pipelineName': '__ASSET_JOB',
+          'solidSelection': None,
+        }),
+      ]),
+    }),
+    dict({
+      'description': None,
+      'minIntervalSeconds': 30,
       'name': 'dynamic_partition_requesting_sensor',
       'sensorState': dict({
         'runs': list([

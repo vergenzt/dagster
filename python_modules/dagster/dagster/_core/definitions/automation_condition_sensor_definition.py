@@ -17,8 +17,9 @@ from dagster._core.definitions.sensor_definition import (
 from dagster._core.definitions.utils import check_valid_name
 from dagster._utils.tags import normalize_tags
 
-EMIT_BACKFILLS_METADATA_KEY = "dagster/emit_backfills"
 MAX_ENTITIES = 500
+EMIT_BACKFILLS_METADATA_KEY = "dagster/emit_backfills"
+DEFAULT_AUTOMATION_CONDITION_SENSOR_NAME = "default_automation_condition_sensor"
 
 
 def _evaluate(sensor_def: "AutomationConditionSensorDefinition", context: SensorEvaluationContext):
@@ -48,6 +49,11 @@ def _evaluate(sensor_def: "AutomationConditionSensorDefinition", context: Sensor
         emit_backfills=sensor_def.emit_backfills,
         default_condition=sensor_def.default_condition,
         logger=context.log,
+    )
+    check.invariant(
+        context.instance.auto_materialize_use_sensors,
+        "Cannot evaluate an AutomationConditionSensorDefinition if the instance setting "
+        " `auto_materialize: use_sensors` is set to False. Update your configuration to prevent this error.",
     )
     check.invariant(
         evaluation_context.total_keys <= MAX_ENTITIES,
