@@ -86,7 +86,11 @@ export const AutomaterializationEvaluationHistoryTable = ({
                   <Timestamp timestamp={{unix: tick.timestamp}} timeFormat={{showTimezone: true}} />
                 </td>
                 <td>
-                  <TickStatusTag tick={tick} isStuckStarted={isTickStuckInStartedState} />
+                  <TickStatusTag
+                    tick={tick}
+                    tickResultType="materializations"
+                    isStuckStarted={isTickStuckInStartedState}
+                  />
                 </td>
                 <td>
                   {isTickStuckInStartedState ? (

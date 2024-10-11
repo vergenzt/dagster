@@ -171,6 +171,7 @@ export const GlobalAutomaterializationContent = () => {
         <>
           <LiveTickTimeline
             ticks={ticks}
+            tickResultType="materializations"
             onHoverTick={onHoverTick}
             onSelectTick={setSelectedTick}
             exactRange={timeRange}
