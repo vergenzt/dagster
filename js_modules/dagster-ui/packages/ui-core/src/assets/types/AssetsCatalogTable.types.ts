@@ -47,6 +47,11 @@ export type AssetCatalogTableQuery = {
               __typename: 'AutoMaterializePolicy';
               policyType: Types.AutoMaterializePolicyType;
             } | null;
+            automationCondition: {
+              __typename: 'AutomationCondition';
+              label: string | null;
+              expandedLabel: Array<string>;
+            } | null;
             owners: Array<
               | {__typename: 'TeamAssetOwner'; team: string}
               | {__typename: 'UserAssetOwner'; email: string}
@@ -109,6 +114,11 @@ export type AssetCatalogGroupTableQuery = {
       __typename: 'AutoMaterializePolicy';
       policyType: Types.AutoMaterializePolicyType;
     } | null;
+    automationCondition: {
+      __typename: 'AutomationCondition';
+      label: string | null;
+      expandedLabel: Array<string>;
+    } | null;
     owners: Array<
       {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
     >;
@@ -152,6 +162,11 @@ export type AssetCatalogGroupTableNodeFragment = {
     __typename: 'AutoMaterializePolicy';
     policyType: Types.AutoMaterializePolicyType;
   } | null;
+  automationCondition: {
+    __typename: 'AutomationCondition';
+    label: string | null;
+    expandedLabel: Array<string>;
+  } | null;
   owners: Array<
     {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
   >;
@@ -164,6 +179,6 @@ export type AssetCatalogGroupTableNodeFragment = {
   };
 };
 
-export const AssetCatalogTableQueryVersion = '3b43af2e45ec4be8c630c66fb4b4d774fc877ff69a717132128db8fc15b7c17c';
+export const AssetCatalogTableQueryVersion = '34085ac8df88f975f14f998aaccebb770f7744772b64666cfc6a5bdf50171723';
 
-export const AssetCatalogGroupTableQueryVersion = 'b96b5c3d49db723bd17b5ac54567a5ff646bc907a6774233b2538072d7c75b81';
+export const AssetCatalogGroupTableQueryVersion = 'd2eb0f7a5af67bbce8f20add4c6b98db97e79d7e139bfc7ee36f04337409614d';

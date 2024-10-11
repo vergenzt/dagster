@@ -26,6 +26,10 @@ export const ASSET_TABLE_DEFINITION_FRAGMENT = gql`
     autoMaterializePolicy {
       policyType
     }
+    automationCondition {
+      label
+      expandedLabel
+    }
     description
     owners {
       ... on UserAssetOwner {

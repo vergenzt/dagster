@@ -32,6 +32,11 @@ export type RepoAssetTableFragment = {
     __typename: 'AutoMaterializePolicy';
     policyType: Types.AutoMaterializePolicyType;
   } | null;
+  automationCondition: {
+    __typename: 'AutomationCondition';
+    label: string | null;
+    expandedLabel: Array<string>;
+  } | null;
   owners: Array<
     {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
   >;
@@ -95,6 +100,11 @@ export type WorkspaceAssetsQuery = {
             __typename: 'AutoMaterializePolicy';
             policyType: Types.AutoMaterializePolicyType;
           } | null;
+          automationCondition: {
+            __typename: 'AutomationCondition';
+            label: string | null;
+            expandedLabel: Array<string>;
+          } | null;
           owners: Array<
             | {__typename: 'TeamAssetOwner'; team: string}
             | {__typename: 'UserAssetOwner'; email: string}
@@ -111,4 +121,4 @@ export type WorkspaceAssetsQuery = {
     | {__typename: 'RepositoryNotFoundError'};
 };
 
-export const WorkspaceAssetsQueryVersion = 'e8592b84ffb6dafd46473b7be4784371a51f4e4f546399e5cc197b1b823ac4c3';
+export const WorkspaceAssetsQueryVersion = '66cc791cdcc9c02c4f6d959b631c1905e306cfa5aead1bb9d03814ab323b0183';
