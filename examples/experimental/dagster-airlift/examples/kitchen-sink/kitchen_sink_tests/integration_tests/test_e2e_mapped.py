@@ -218,3 +218,23 @@ def test_migrated_overridden_dag_custom_operator_materializes(
         "overridden_dag_custom_callback": [AssetKey("asset_overridden_dag_custom_callback")],
     }
     poll_for_expected_mats(af_instance, expected_mats_per_dag)
+
+
+def test_partitioned_observation(
+    airflow_instance: None,
+    dagster_dev: None,
+    dagster_home: str,
+) -> None:
+    """Test that assets with time-window partitions get partitions mapped correctly onto their materializations."""
+    from kitchen_sink.dagster_defs.airflow_instance import local_airflow_instance
+
+    af_instance = local_airflow_instance()
+    assert af_instance.get_task_info(dag_id="overridden_dag_custom_callback", task_id="OVERRIDDEN")
+
+    dagster_instance = DagsterInstance.get()
+    entry = poll_for_materialization(
+        dagster_instance=dagster_instance,
+        asset_key=AssetKey("every_minute_dag__partitioned"),
+    )
+    assert entry.asset_materialization
+    assert entry.asset_materialization.partition

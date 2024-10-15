@@ -1,7 +1,11 @@
 from dagster import Definitions, asset
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
+from dagster._time import get_current_datetime_midnight
 from dagster_airlift.core import (
     assets_with_dag_mappings,
+    assets_with_task_mappings,
     build_defs_from_airflow_instance,
     dag_defs,
     task_defs,
@@ -76,6 +80,23 @@ def build_mapped_defs() -> Definitions:
                 task_defs(
                     "downstream_print_task",
                     Definitions(assets=[make_print_asset("unaffected_dag__another_print_asset")]),
+                ),
+            ),
+            Definitions(
+                assets=assets_with_task_mappings(
+                    dag_id="every_minute_dag",
+                    task_mappings={
+                        "task": [
+                            AssetSpec(
+                                key="every_minute_dag__partitioned",
+                                partitions_def=TimeWindowPartitionsDefinition(
+                                    start=get_current_datetime_midnight(),
+                                    cron_schedule="* * * * *",
+                                    fmt="%Y-%m-%d-%H-%M",
+                                ),
+                            )
+                        ],
+                    },
                 ),
             ),
             Definitions(
