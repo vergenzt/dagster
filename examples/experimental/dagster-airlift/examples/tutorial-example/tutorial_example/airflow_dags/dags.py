@@ -11,6 +11,7 @@ from dagster_airlift.in_airflow import proxying_to_dagster
 from dagster_airlift.in_airflow.proxied_state import load_proxied_state_from_yaml
 from tutorial_example.shared.export_duckdb_to_csv import ExportDuckDbToCsvArgs, export_duckdb_to_csv
 from tutorial_example.shared.load_csv_to_duckdb import LoadCsvToDuckDbArgs, load_csv_to_duckdb
+from dagster._time import get_current_datetime_midnight
 
 
 class LoadCSVToDuckDB(BaseOperator):
@@ -78,7 +79,7 @@ class ExportDuckDBToCSV(BaseOperator):
 default_args = {
     "owner": "airflow",
     "depends_on_past": False,
-    "start_date": datetime(2024, 7, 18),
+    "start_date": get_current_datetime_midnight(),
     "retries": 1,
     "retry_delay": timedelta(minutes=5),
 }
@@ -87,7 +88,7 @@ DBT_DIR = os.getenv("TUTORIAL_DBT_PROJECT_DIR")
 dag = DAG(
     "rebuild_customers_list",
     default_args=default_args,
-    schedule_interval=None,
+    schedule="@daily",
     is_paused_upon_creation=False,
 )
 
