@@ -71,7 +71,7 @@ def test_sensor_invocation_args():
     assert basic_sensor(build_sensor_context()).run_config == {}
     assert basic_sensor(None).run_config == {}
 
-    # Test sensor arbitrary arg name
+    # Manual Tick arbitrary arg name
     @sensor(job_name="foo_job")
     def basic_sensor_with_context(_arbitrary_context):
         return RunRequest(run_key=None, run_config={}, tags={})
