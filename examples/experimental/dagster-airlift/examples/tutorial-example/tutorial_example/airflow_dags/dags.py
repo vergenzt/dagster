@@ -1,17 +1,17 @@
 # Define the default arguments for the DAG
 import os
-from datetime import datetime, timedelta
+from datetime import timedelta
 from pathlib import Path
 from typing import List, Optional
 
 from airflow import DAG
 from airflow.models.operator import BaseOperator
 from airflow.operators.bash import BashOperator
+from dagster._time import get_current_datetime_midnight
 from dagster_airlift.in_airflow import proxying_to_dagster
 from dagster_airlift.in_airflow.proxied_state import load_proxied_state_from_yaml
 from tutorial_example.shared.export_duckdb_to_csv import ExportDuckDbToCsvArgs, export_duckdb_to_csv
 from tutorial_example.shared.load_csv_to_duckdb import LoadCsvToDuckDbArgs, load_csv_to_duckdb
-from dagster._time import get_current_datetime_midnight
 
 
 class LoadCSVToDuckDB(BaseOperator):
