@@ -82,7 +82,7 @@ def test_build_defs(
     assert len(asset_specs_by_key) == 3
 
     expected_lookml_view_asset_key = AssetKey(["view", "my_view"])
-    expected_lookml_explore_asset_key = AssetKey(["my_model::my_explore"])
+    expected_lookml_explore_asset_key = AssetKey(["my_model_my_explore"])
     expected_looker_dashboard_asset_key = AssetKey(["my_dashboard_1"])
 
     assert asset_specs_by_key[expected_lookml_view_asset_key]
